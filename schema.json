@@ -1,0 +1,345 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "$id": "https://example.com/task-management-system.schema.json",
+ "title": "Task Management System",
+ "description": "Schema for multi-context hierarchical task management",
+ "type": "object",
+ "patternProperties": {
+   "^[a-zA-Z][a-zA-Z0-9_-]*$": {
+     "$ref": "#/definitions/context"
+   }
+ },
+ "additionalProperties": false,
+ "definitions": {
+   "context": {
+     "type": "object",
+     "required": ["tasks", "metadata"],
+     "properties": {
+       "tasks": {
+         "type": "array",
+         "items": {
+           "$ref": "#/definitions/task"
+         }
+       },
+       "metadata": {
+         "$ref": "#/definitions/metadata"
+       }
+     },
+     "additionalProperties": false
+   },
+   "task": {
+     "type": "object",
+     "required": [
+       "id",
+       "title",
+       "description",
+       "priority",
+       "status",
+       "dependencies",
+       "creationDate"
+     ],
+     "properties": {
+       "id": {
+         "type": "integer",
+         "minimum": 1,
+         "description": "Unique identifier within the context"
+       },
+       "title": {
+         "type": "string",
+         "minLength": 1,
+         "maxLength": 200
+       },
+       "description": {
+         "type": "string",
+         "minLength": 1
+       },
+       "details": {
+         "type": "string",
+         "description": "Extended implementation details"
+       },
+       "testStrategy": {
+         "type": "string",
+         "description": "Testing approach and acceptance criteria"
+       },
+       "priority": {
+         "type": "string",
+         "enum": ["low", "medium", "high", "critical"]
+       },
+       "status": {
+         "$ref": "#/definitions/status"
+       },
+       "dependencies": {
+         "type": "array",
+         "items": {
+           "$ref": "#/definitions/dependency"
+         },
+         "uniqueItems": true
+       },
+       "creationDate": {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
+         "description": "Creation timestamp in yyyy-MM-ddTHH:mm:ss format"
+       },
+       "completedDate": {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
+         "description": "Completion timestamp"
+       },
+       "assignee": {
+         "type": "string",
+         "description": "Person assigned to this task"
+       },
+       "team": {
+         "type": "string",
+         "description": "Team responsible for this task",
+         "examples": ["backend", "frontend", "devops", "qa", "design"]
+       },
+       "tags": {
+         "type": "array",
+         "items": {
+           "type": "string",
+           "pattern": "^[a-z0-9-]+$",
+           "minLength": 1,
+           "maxLength": 50
+         },
+         "uniqueItems": true,
+         "description": "Tags for categorization and filtering"
+       },
+       "blockers": {
+         "type": "array",
+         "items": {
+           "type": "string"
+         },
+         "description": "Current blockers preventing progress"
+       },
+       "notes": {
+         "type": "string",
+         "description": "Additional notes and context"
+       },
+       "subtasks": {
+         "type": "array",
+         "items": {
+           "$ref": "#/definitions/subtask"
+         }
+       }
+     },
+     "additionalProperties": false
+   },
+   "subtask": {
+     "type": "object",
+     "required": [
+       "id",
+       "title",
+       "description",
+       "status",
+       "dependencies",
+       "creationDate"
+     ],
+     "properties": {
+       "id": {
+         "type": "integer",
+         "minimum": 1,
+         "description": "Unique identifier for the subtask"
+       },
+       "title": {
+         "type": "string",
+         "minLength": 1,
+         "maxLength": 200
+       },
+       "description": {
+         "type": "string",
+         "minLength": 1
+       },
+       "details": {
+         "type": "string",
+         "description": "Extended implementation details"
+       },
+       "testStrategy": {
+         "type": "string",
+         "description": "Testing approach and acceptance criteria"
+       },
+       "status": {
+         "$ref": "#/definitions/status"
+       },
+       "dependencies": {
+         "type": "array",
+         "items": {
+           "$ref": "#/definitions/dependency"
+         },
+         "uniqueItems": true
+       },
+       "creationDate": {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$"
+       },
+       "completedDate": {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$"
+       },
+       "assignee": {
+         "type": "string"
+       },
+       "reviewer": {
+         "type": "string"
+       },
+       "team": {
+         "type": "string",
+         "examples": ["backend", "frontend", "devops", "qa", "design"]
+       },
+       "tags": {
+         "type": "array",
+         "items": {
+           "type": "string",
+           "pattern": "^[a-z0-9-]+$",
+           "minLength": 1,
+           "maxLength": 50
+         },
+         "uniqueItems": true
+       },
+       "blockers": {
+         "type": "array",
+         "items": {
+           "type": "string"
+         }
+       },
+       "notes": {
+         "type": "string"
+       },
+       "subtasks": {
+         "type": "array",
+         "items": {
+           "$ref": "#/definitions/subtask"
+         },
+         "description": "Nested subtasks - recursive structure"
+       }
+     },
+     "additionalProperties": false
+   },
+   "status": {
+     "type": "string",
+     "enum": ["todo", "inprogress", "inreview", "testing", "done", "blocked"],
+     "description": "Current status of the task or subtask"
+   },
+   "dependency": {
+     "oneOf": [
+       {
+         "type": "integer",
+         "minimum": 1,
+         "description": "Simple dependency - task ID within same context"
+       },
+       {
+         "type": "string",
+         "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*:[0-9]+$",
+         "description": "Cross-context dependency - format: context:taskId",
+         "examples": ["master:1", "store:50", "customer:12"]
+       }
+     ]
+   },
+   "metadata": {
+     "type": "object",
+     "required": ["created", "updated", "description"],
+     "properties": {
+       "created": {
+         "type": "string",
+         "format": "date-time",
+         "description": "Context creation timestamp"
+       },
+       "updated": {
+         "type": "string",
+         "format": "date-time",
+         "description": "Last update timestamp"
+       },
+       "description": {
+         "type": "string",
+         "description": "Context description"
+       },
+       "owner": {
+         "type": "string",
+         "description": "Context owner or maintainer"
+       },
+       "version": {
+         "type": "string",
+         "pattern": "^\\d+\\.\\d+\\.\\d+$",
+         "description": "Schema version",
+         "default": "1.0.0"
+       }
+     },
+     "additionalProperties": false
+   }
+ },
+ "minProperties": 1,
+ "examples": [
+   {
+     "master": {
+       "tasks": [
+         {
+           "id": 1,
+           "title": "Platform Admin: Category Management",
+           "description": "Core functionality for Platform Admins",
+           "priority": "high",
+           "status": "todo",
+           "dependencies": [],
+           "creationDate": "2025-08-11T00:13:46",
+           "team": "backend",
+           "tags": ["authentication", "admin", "core"],
+           "blockers": [],
+           "notes": "Critical for platform launch",
+           "subtasks": [
+             {
+               "id": 101,
+               "title": "Create Authentication System",
+               "description": "JWT-based auth for platform admins",
+               "status": "todo",
+               "dependencies": [],
+               "creationDate": "2025-08-11T00:15:00",
+               "team": "backend",
+               "tags": ["security", "jwt"],
+               "subtasks": [
+                 {
+                   "id": 1001,
+                   "title": "Design JWT Schema",
+                   "description": "Define token structure and claims",
+                   "status": "todo",
+                   "dependencies": [],
+                   "creationDate": "2025-08-11T00:16:00",
+                   "subtasks": []
+                 }
+               ]
+             }
+           ]
+         }
+       ],
+       "metadata": {
+         "created": "2025-08-11T00:13:46.404Z",
+         "updated": "2025-08-11T00:13:46.404Z",
+         "description": "Master context for platform administration"
+       }
+     },
+     "store": {
+       "tasks": [
+         {
+           "id": 1,
+           "title": "Store Admin Dashboard",
+           "description": "Dashboard for store administrators",
+           "priority": "medium",
+           "status": "blocked",
+           "dependencies": ["master:1"],
+           "creationDate": "2025-08-11T10:00:00",
+           "team": "frontend",
+           "blockers": ["Waiting for authentication system from master context"],
+           "subtasks": []
+         }
+       ],
+       "metadata": {
+         "created": "2025-08-11T10:00:00.000Z",
+         "updated": "2025-08-11T10:00:00.000Z",
+         "description": "Store management context"
+       }
+     }
+   }
+ ]
+}
