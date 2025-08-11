@@ -100,7 +100,6 @@
          "type": "array",
          "items": {
            "type": "string",
-           "pattern": "^[a-z0-9-]+$",
            "minLength": 1,
            "maxLength": 50
          },
