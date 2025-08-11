@@ -10,8 +10,9 @@ Un sistema de gestión de tareas multi-contexto basado en **Model Context Protoc
 - **Estados de Tarea**: Flujo completo desde todo hasta completado
 - **Dependencias**: Gestión de dependencias entre tareas y contextos
 - **Sistema de Tags**: Categorización y filtrado avanzado
-- **API MCP**: Integración nativa con herramientas MCP
+- **API MCP Mejorada**: Herramientas estandarizadas con documentación automática
 - **Validación JSON Schema**: Estructura de datos robusta y validada
+- **Herramientas Completas**: 10 herramientas MCP para gestión completa de tareas
 
 ## 🏗️ Arquitectura
 
@@ -131,6 +132,62 @@ await update_task_status(
 )
 ```
 
+#### 5. Crear Subtarea (`add_subtask`)
+```python
+await add_subtask(
+    context="proyecto",
+    task_id=1,
+    title="Validar formulario",
+    description="Implementar validaciones del lado del cliente",
+    tags=["frontend", "validation"]
+)
+```
+
+#### 6. Obtener Subtarea (`get_subtask_by_id`)
+```python
+await get_subtask_by_id(
+    context="proyecto",
+    task_id=1,
+    subtask_id=101
+)
+```
+
+#### 7. Actualizar Estado de Subtarea (`update_subtask_status`)
+```python
+await update_subtask_status(
+    context="proyecto",
+    task_id=1,
+    subtask_id=101,
+    status="done"
+)
+```
+
+#### 8. Eliminar Subtarea (`delete_subtask`)
+```python
+await delete_subtask(
+    context="proyecto",
+    task_id=1,
+    subtask_id=101
+)
+```
+
+#### 9. Eliminar Tarea (`delete_task`)
+```python
+await delete_task(
+    context="proyecto",
+    task_id=1
+)
+```
+
+#### 10. Listar Subtareas (`list_subtasks`)
+```python
+await list_subtasks(
+    context="proyecto",
+    task_id=1,
+    recursive=True  # incluir subtareas anidadas
+)
+```
+
 ### Estados de Tarea Válidos
 
 - `todo` - Pendiente
@@ -139,6 +196,32 @@ await update_task_status(
 - `testing` - En pruebas
 - `done` - Completada
 - `blocked` - Bloqueada
+
+### Estructura de Herramientas MCP
+
+Todas las herramientas siguen un formato consistente con:
+
+- **Nombres explícitos**: Cada herramienta tiene un nombre descriptivo
+- **Documentación de parámetros**: Todos los parámetros incluyen descripciones detalladas
+- **Validación de tipos**: Uso de Pydantic Field para validación y documentación
+- **Manejo de errores**: Respuestas consistentes con logging contextual
+
+#### Ejemplo de Estructura de Herramienta
+
+```python
+@mcp.tool(
+    name="add_task",
+    description="Create a new task in the specified context"
+)
+async def add_task(
+    context: str = Field(description="The context name"),
+    title: str = Field(description="The task title"),
+    description: str = Field(description="The task description"),
+    priority: str = Field(description="The task priority (low, medium, high, critical)"),
+    tags: Optional[List[str]] = Field(default=None, description="List of tags for the task"),
+    ctx: Context = None
+) -> dict:
+```
 
 ### Prioridades Válidas
 
@@ -257,6 +340,23 @@ Si tienes problemas o preguntas:
 - [ ] API REST adicional
 - [ ] Sistema de permisos y roles
 - [ ] Backup y sincronización
+
+## ✨ Mejoras Recientes
+
+### API MCP Mejorada
+
+- **Herramientas Estandarizadas**: Todas las herramientas ahora siguen el mismo formato
+- **Documentación Automática**: Parámetros documentados con Pydantic Field
+- **Nombres Explícitos**: Cada herramienta tiene un nombre descriptivo único
+- **Validación Robusta**: Mejor manejo de errores y validación de tipos
+- **Logging Contextual**: Respuestas informativas con contexto MCP
+
+### Beneficios para Desarrolladores
+
+- **Mejor Autocompletado**: IDEs pueden proporcionar mejor asistencia
+- **Documentación Integrada**: Parámetros auto-documentados
+- **Consistencia**: API uniforme y predecible
+- **Mantenibilidad**: Código más fácil de mantener y extender
 
 ## 📚 Referencias
 
