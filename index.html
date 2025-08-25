@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager - Trello Style</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0079bf, #026aa7);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .context-selector {
+            margin-bottom: 20px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .context-selector select {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background: white;
+            font-size: 16px;
+        }
+
+        .sync-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .sync-status.saved {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .sync-status.unsaved {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+            animation: pulse 2s infinite;
+        }
+
+        .sync-status.syncing {
+            background: #cce5ff;
+            color: #004085;
+            border: 1px solid #b3d7ff;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .sync-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sync-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .sync-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .sync-btn.syncing {
+            background: #007bff;
+        }
+
+        .board {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding: 20px 0;
+            min-height: 600px;
+        }
+
+        .column {
+            background: #ebecf0;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 300px;
+            flex-shrink: 0;
+        }
+
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .column-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #172b4d;
+        }
+
+        .task-count {
+            background: #ddd;
+            color: #666;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .task-card {
+            background: white;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .task-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        .task-card.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+        .task-card.priority-low { border-left-color: #61bd4f; }
+        .task-card.priority-medium { border-left-color: #f2d600; }
+        .task-card.priority-high { border-left-color: #ff9f1a; }
+        .task-card.priority-critical { border-left-color: #eb5a46; }
+
+        .task-card.subtask {
+            margin-left: 15px;
+            border-left-width: 2px;
+            border-left-style: dashed;
+            position: relative;
+            background: #f8f9fa;
+        }
+
+        .task-card.subtask::before {
+            content: '';
+            position: absolute;
+            left: -15px;
+            top: 50%;
+            width: 12px;
+            height: 1px;
+            background: #ddd;
+            border-top: 1px dashed #ddd;
+        }
+
+        .parent-reference {
+            background: #e3f2fd;
+            color: #1976d2;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .parent-reference::before {
+            content: '↳ ';
+            font-weight: bold;
+        }
+
+        .task-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #172b4d;
+        }
+
+        .task-description {
+            color: #5e6c84;
+            font-size: 14px;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .task-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .task-tag {
+            background: #ddd;
+            color: #333;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .task-assignee {
+            background: #0079bf;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .task-team {
+            background: #61bd4f;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .task-dates {
+            font-size: 12px;
+            color: #8c8c8c;
+            margin-top: 8px;
+        }
+
+        .subtasks {
+            margin-top: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #0079bf;
+        }
+
+        .subtasks-header {
+            font-size: 11px;
+            font-weight: 600;
+            color: #0079bf;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .subtask {
+            font-size: 11px;
+            color: #555;
+            margin-bottom: 3px;
+            padding: 2px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .subtask-status {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .subtask-status.todo { background: #ddd; }
+        .subtask-status.inprogress { background: #f2d600; }
+        .subtask-status.inreview { background: #ff9f1a; }
+        .subtask-status.testing { background: #0079bf; }
+        .subtask-status.done { background: #61bd4f; }
+        .subtask-status.blocked { background: #eb5a46; }
+
+        .blockers {
+            background: #ffebee;
+            border: 1px solid #ffcdd2;
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 8px;
+        }
+
+        .blocker-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #d32f2f;
+            margin-bottom: 4px;
+        }
+
+        .blocker-item {
+            font-size: 11px;
+            color: #c62828;
+            margin-bottom: 2px;
+        }
+
+        .add-task-btn {
+            width: 100%;
+            padding: 8px;
+            background: transparent;
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .add-task-btn:hover {
+            background: #f4f5f7;
+            border-color: #aaa;
+        }
+
+        .column.drag-over {
+            background: #d4edda;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 900px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #172b4d;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #0079bf;
+            box-shadow: 0 0 0 2px rgba(0, 121, 191, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary {
+            background: #0079bf;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #026aa7;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .dependencies-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .dependencies-section > label {
+            display: block;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #172b4d;
+            font-size: 14px;
+        }
+
+        .dependency-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+
+        .dependency-item input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .remove-dependency {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: background 0.2s ease;
+        }
+
+        .remove-dependency:hover {
+            background: #c82333;
+        }
+
+        .add-dependency {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .add-dependency:hover {
+            background: #218838;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .board {
+                flex-direction: column;
+            }
+
+            .column {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Task Manager</h1>
+        <p>Sistema de gestión de tareas tipo Trello</p>
+    </div>
+
+    <div class="context-selector">
+        <select id="contextSelect">
+            <option value="master">Master Context</option>
+            <option value="store">Store Context</option>
+        </select>
+        
+        <input type="file" id="jsonFileInput" accept=".json" style="display: none;" onchange="loadJSONFile(event)">
+        <button onclick="document.getElementById('jsonFileInput').click()" style="padding: 8px 16px; background: #61bd4f; color: white; border: none; border-radius: 4px; cursor: pointer;">📁 Cargar JSON</button>
+        
+        <div class="sync-controls">
+            <div id="syncStatus" class="sync-status saved">
+                <span id="syncIcon">✅</span>
+                <span id="syncText">Todo guardado</span>
+            </div>
+            <button id="syncBtn" class="sync-btn" onclick="syncData()">
+                <span id="syncBtnIcon">💾</span>
+                <span id="syncBtnText">Guardar cambios</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="board" id="board">
+        <div class="column" data-status="todo">
+            <div class="column-header">
+                <span class="column-title">Por Hacer</span>
+                <span class="task-count" id="todo-count">0</span>
+            </div>
+            <div class="tasks" id="todo-tasks"></div>
+            <button class="add-task-btn" onclick="openTaskModal('todo')">+ Agregar tarea</button>
+        </div>
+
+        <div class="column" data-status="inprogress">
+            <div class="column-header">
+                <span class="column-title">En Progreso</span>
+                <span class="task-count" id="inprogress-count">0</span>
+            </div>
+            <div class="tasks" id="inprogress-tasks"></div>
+            <button class="add-task-btn" onclick="openTaskModal('inprogress')">+ Agregar tarea</button>
+        </div>
+
+        <div class="column" data-status="inreview">
+            <div class="column-header">
+                <span class="column-title">En Revisión</span>
+                <span class="task-count" id="inreview-count">0</span>
+            </div>
+            <div class="tasks" id="inreview-tasks"></div>
+            <button class="add-task-btn" onclick="openTaskModal('inreview')">+ Agregar tarea</button>
+        </div>
+
+        <div class="column" data-status="testing">
+            <div class="column-header">
+                <span class="column-title">Testing</span>
+                <span class="task-count" id="testing-count">0</span>
+            </div>
+            <div class="tasks" id="testing-tasks"></div>
+            <button class="add-task-btn" onclick="openTaskModal('testing')">+ Agregar tarea</button>
+        </div>
+
+        <div class="column" data-status="done">
+            <div class="column-header">
+                <span class="column-title">Completadas</span>
+                <span class="task-count" id="done-count">0</span>
+            </div>
+            <div class="tasks" id="done-tasks"></div>
+            <button class="add-task-btn" onclick="openTaskModal('done')">+ Agregar tarea</button>
+        </div>
+
+        <div class="column" data-status="blocked">
+            <div class="column-header">
+                <span class="column-title">Bloqueadas</span>
+                <span class="task-count" id="blocked-count">0</span>
+            </div>
+            <div class="tasks" id="blocked-tasks"></div>
+            <button class="add-task-btn" onclick="openTaskModal('blocked')">+ Agregar tarea</button>
+        </div>
+    </div>
+
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nueva Tarea</h2>
+                <button class="close-btn" onclick="closeTaskModal()">&times;</button>
+            </div>
+            <form id="taskForm">
+                <div class="form-group">
+                    <label for="taskTitle">Título:</label>
+                    <input type="text" id="taskTitle" name="title" required maxlength="200" placeholder="Ingresa el título de la tarea">
+                </div>
+                
+                <div class="form-group">
+                    <label for="taskDescription">Descripción:</label>
+                    <textarea id="taskDescription" name="description" required placeholder="Describe detalladamente la tarea"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskPriority">Prioridad:</label>
+                        <select id="taskPriority" name="priority">
+                            <option value="low">🔵 Baja</option>
+                            <option value="medium">🟡 Media</option>
+                            <option value="high">🟠 Alta</option>
+                            <option value="critical">🔴 Crítica</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="taskStatus">Estado:</label>
+                        <select id="taskStatus" name="status">
+                            <option value="todo">📝 Por Hacer</option>
+                            <option value="inprogress">⚡ En Progreso</option>
+                            <option value="inreview">👁️ En Revisión</option>
+                            <option value="testing">🧪 Testing</option>
+                            <option value="done">✅ Completadas</option>
+                            <option value="blocked">🚫 Bloqueadas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskAssignee">Asignado a:</label>
+                        <input type="text" id="taskAssignee" name="assignee" placeholder="Nombre de la persona asignada">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="taskTeam">Equipo:</label>
+                        <select id="taskTeam" name="team">
+                            <option value="">Seleccionar equipo</option>
+                            <option value="backend">🔧 Backend</option>
+                            <option value="frontend">🎨 Frontend</option>
+                            <option value="devops">⚙️ DevOps</option>
+                            <option value="qa">🔍 QA</option>
+                            <option value="design">🎯 Design</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="taskTags">Tags (separados por comas):</label>
+                    <input type="text" id="taskTags" name="tags" placeholder="auth, api, security, frontend, database">
+                </div>
+                
+                <div class="form-group">
+                    <label for="taskNotes">Notas adicionales:</label>
+                    <textarea id="taskNotes" name="notes" placeholder="Información adicional, contexto, o comentarios importantes"></textarea>
+                </div>
+                
+                <div class="dependencies-section">
+                    <label>Dependencias:</label>
+                    <div id="dependenciesList"></div>
+                    <button type="button" class="add-dependency" onclick="addDependencyField()">+ Agregar dependencia</button>
+                </div>
+                
+                <div class="form-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let taskData = {};
+        let currentContext = 'master';
+        let editingTaskId = null;
+        let taskIdCounter = 1;
+        
+        // Hybrid sync system variables
+        let unsavedChanges = 0;
+        let lastSyncTime = null;
+        let autoBackupTimer = null;
+        let lastExportedData = null;
+
+        const statusLabels = {
+            todo: 'Por Hacer',
+            inprogress: 'En Progreso',
+            inreview: 'En Revisión',
+            testing: 'Testing',
+            done: 'Completadas',
+            blocked: 'Bloqueadas'
+        };
+
+        function initializeApp() {
+            loadSampleData();
+            updateContextSelector();
+            setupEventListeners();
+            renderTasks();
+            
+            // Initialize hybrid sync system
+            lastExportedData = JSON.parse(JSON.stringify(taskData));
+            lastSyncTime = new Date();
+            unsavedChanges = 0;
+            updateSyncStatus();
+            
+            // Start auto-backup timer
+            autoBackupTimer = setTimeout(autoBackup, 30 * 60 * 1000);
+        }
+
+        function loadSampleData() {
+            const sampleData = {
+                "master": {
+                    "tasks": [
+                        {
+                            "id": 1,
+                            "title": "Platform Admin: Category Management",
+                            "description": "Core functionality for Platform Admins",
+                            "priority": "high",
+                            "status": "todo",
+                            "dependencies": [],
+                            "creationDate": "2025-08-11T00:13:46",
+                            "team": "backend",
+                            "tags": ["authentication", "admin", "core"],
+                            "blockers": [],
+                            "notes": "Critical for platform launch",
+                            "subtasks": [
+                                {
+                                    "id": 101,
+                                    "title": "Create Authentication System",
+                                    "description": "JWT-based auth for platform admins",
+                                    "status": "todo",
+                                    "dependencies": [],
+                                    "creationDate": "2025-08-11T00:15:00",
+                                    "team": "backend",
+                                    "tags": ["security", "jwt"],
+                                    "subtasks": []
+                                }
+                            ]
+                        },
+                        {
+                            "id": 2,
+                            "title": "API Documentation",
+                            "description": "Complete API documentation for all endpoints",
+                            "priority": "medium",
+                            "status": "inprogress",
+                            "dependencies": [],
+                            "creationDate": "2025-08-11T10:00:00",
+                            "assignee": "John Doe",
+                            "team": "backend",
+                            "tags": ["documentation", "api"],
+                            "blockers": [],
+                            "notes": "Using OpenAPI specification",
+                            "subtasks": [
+                                {
+                                    "id": 201,
+                                    "title": "Document Authentication Endpoints",
+                                    "description": "API docs for login, logout, refresh token",
+                                    "status": "done",
+                                    "dependencies": [],
+                                    "creationDate": "2025-08-11T10:30:00",
+                                    "subtasks": []
+                                },
+                                {
+                                    "id": 202,
+                                    "title": "Document User Management APIs",
+                                    "description": "CRUD operations for user management",
+                                    "status": "inprogress",
+                                    "dependencies": [],
+                                    "creationDate": "2025-08-11T11:00:00",
+                                    "subtasks": []
+                                },
+                                {
+                                    "id": 203,
+                                    "title": "Document Category APIs",
+                                    "description": "Category management endpoints",
+                                    "status": "todo",
+                                    "dependencies": [],
+                                    "creationDate": "2025-08-11T11:15:00",
+                                    "subtasks": []
+                                }
+                            ]
+                        },
+                        {
+                            "id": 3,
+                            "title": "Frontend Login Component",
+                            "description": "Create reusable login component with validation",
+                            "priority": "high",
+                            "status": "inreview",
+                            "dependencies": ["master:1"],
+                            "creationDate": "2025-08-11T12:00:00",
+                            "assignee": "Sarah Smith",
+                            "team": "frontend",
+                            "tags": ["react", "authentication", "component"],
+                            "blockers": [],
+                            "notes": "Needs auth system from backend",
+                            "subtasks": [
+                                {
+                                    "id": 301,
+                                    "title": "Design Login Form UI",
+                                    "description": "Create responsive login form design",
+                                    "status": "done",
+                                    "dependencies": [],
+                                    "creationDate": "2025-08-11T12:15:00",
+                                    "subtasks": []
+                                },
+                                {
+                                    "id": 302,
+                                    "title": "Implement Form Validation",
+                                    "description": "Add client-side validation rules",
+                                    "status": "done",
+                                    "dependencies": [],
+                                    "creationDate": "2025-08-11T12:30:00",
+                                    "subtasks": []
+                                },
+                                {
+                                    "id": 303,
+                                    "title": "Write Unit Tests",
+                                    "description": "Test component functionality",
+                                    "status": "testing",
+                                    "dependencies": [],
+                                    "creationDate": "2025-08-11T13:00:00",
+                                    "subtasks": []
+                                }
+                            ]
+                        }
+                    ],
+                    "metadata": {
+                        "created": "2025-08-11T00:13:46.404Z",
+                        "updated": "2025-08-11T00:13:46.404Z",
+                        "description": "Master context for platform administration"
+                    }
+                },
+                "store": {
+                    "tasks": [
+                        {
+                            "id": 1,
+                            "title": "Store Admin Dashboard",
+                            "description": "Dashboard for store administrators",
+                            "priority": "medium",
+                            "status": "blocked",
+                            "dependencies": ["master:1"],
+                            "creationDate": "2025-08-11T10:00:00",
+                            "team": "frontend",
+                            "tags": ["dashboard", "ui"],
+                            "blockers": ["Waiting for authentication system from master context"],
+                            "subtasks": []
+                        }
+                    ],
+                    "metadata": {
+                        "created": "2025-08-11T10:00:00.000Z",
+                        "updated": "2025-08-11T10:00:00.000Z",
+                        "description": "Store management context"
+                    }
+                }
+            };
+
+            const saved = localStorage.getItem('taskManagerData');
+            if (saved) {
+                taskData = JSON.parse(saved);
+                taskIdCounter = Math.max(...Object.values(taskData).flatMap(ctx => ctx.tasks.map(t => t.id))) + 1;
+            } else {
+                taskData = sampleData;
+                taskIdCounter = 3;
+                saveData();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('taskManagerData', JSON.stringify(taskData));
+            trackUnsavedChanges();
+        }
+
+        // Hybrid sync system functions
+        function trackUnsavedChanges() {
+            unsavedChanges++;
+            updateSyncStatus();
+            
+            // Auto-backup every 10 changes
+            if (unsavedChanges >= 10) {
+                autoBackup();
+            }
+            
+            // Reset auto-backup timer (30 minutes)
+            clearTimeout(autoBackupTimer);
+            autoBackupTimer = setTimeout(autoBackup, 30 * 60 * 1000);
+        }
+
+        function updateSyncStatus() {
+            const syncStatus = document.getElementById('syncStatus');
+            const syncIcon = document.getElementById('syncIcon');
+            const syncText = document.getElementById('syncText');
+            const syncBtn = document.getElementById('syncBtn');
+            
+            if (unsavedChanges === 0) {
+                syncStatus.className = 'sync-status saved';
+                syncIcon.textContent = '✅';
+                syncText.textContent = 'Todo guardado';
+                syncBtn.disabled = true;
+                if (lastSyncTime) {
+                    const timeAgo = getTimeAgo(lastSyncTime);
+                    syncText.textContent = `Guardado ${timeAgo}`;
+                }
+            } else {
+                syncStatus.className = 'sync-status unsaved';
+                syncIcon.textContent = '⚠️';
+                syncText.textContent = `${unsavedChanges} cambios sin guardar`;
+                syncBtn.disabled = false;
+            }
+        }
+
+        function syncData() {
+            const syncBtn = document.getElementById('syncBtn');
+            const syncBtnIcon = document.getElementById('syncBtnIcon');
+            const syncBtnText = document.getElementById('syncBtnText');
+            const syncStatus = document.getElementById('syncStatus');
+            
+            // Show syncing state
+            syncBtn.className = 'sync-btn syncing';
+            syncBtn.disabled = true;
+            syncBtnIcon.textContent = '🔄';
+            syncBtnText.textContent = 'Guardando...';
+            syncStatus.className = 'sync-status syncing';
+            document.getElementById('syncIcon').textContent = '🔄';
+            document.getElementById('syncText').textContent = 'Sincronizando...';
+            
+            // Simulate sync process
+            setTimeout(() => {
+                exportDataToFile();
+                unsavedChanges = 0;
+                lastSyncTime = new Date();
+                lastExportedData = JSON.parse(JSON.stringify(taskData));
+                
+                // Reset button state
+                syncBtn.className = 'sync-btn';
+                syncBtnIcon.textContent = '💾';
+                syncBtnText.textContent = 'Guardar cambios';
+                
+                updateSyncStatus();
+                
+                // Clear auto-backup timer since we just synced
+                clearTimeout(autoBackupTimer);
+                autoBackupTimer = setTimeout(autoBackup, 30 * 60 * 1000);
+            }, 1000);
+        }
+
+        function autoBackup() {
+            if (unsavedChanges > 0) {
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                exportDataToFile(`task-manager-backup-${timestamp}.json`);
+                
+                unsavedChanges = 0;
+                lastSyncTime = new Date();
+                updateSyncStatus();
+                
+                // Show temporary notification
+                showNotification('🔄 Backup automático guardado', 'success');
+            }
+            
+            // Schedule next auto-backup
+            autoBackupTimer = setTimeout(autoBackup, 30 * 60 * 1000);
+        }
+
+        function exportDataToFile(filename = null) {
+            const dataStr = JSON.stringify(taskData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename || 'task-manager-data.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return 'ahora';
+            if (minutes < 60) return `hace ${minutes}m`;
+            if (hours < 24) return `hace ${hours}h`;
+            return `hace ${days}d`;
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            
+            let bgColor, textColor, borderColor;
+            switch(type) {
+                case 'success':
+                    bgColor = '#d4edda';
+                    textColor = '#155724';
+                    borderColor = '#c3e6cb';
+                    break;
+                case 'error':
+                    bgColor = '#f8d7da';
+                    textColor = '#721c24';
+                    borderColor = '#f5c6cb';
+                    break;
+                default:
+                    bgColor = '#cce5ff';
+                    textColor = '#004085';
+                    borderColor = '#b3d7ff';
+            }
+            
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${bgColor};
+                color: ${textColor};
+                border: 1px solid ${borderColor};
+                padding: 12px 20px;
+                border-radius: 6px;
+                z-index: 10000;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function setupEventListeners() {
+            document.getElementById('contextSelect').addEventListener('change', (e) => {
+                currentContext = e.target.value;
+                renderTasks();
+            });
+
+            document.getElementById('taskForm').addEventListener('submit', handleTaskSubmit);
+
+            setupDragAndDrop();
+        }
+
+        function setupDragAndDrop() {
+            const columns = document.querySelectorAll('.column');
+            
+            columns.forEach(column => {
+                column.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    column.classList.add('drag-over');
+                });
+
+                column.addEventListener('dragleave', () => {
+                    column.classList.remove('drag-over');
+                });
+
+                column.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    column.classList.remove('drag-over');
+                    
+                    const taskId = parseInt(e.dataTransfer.getData('text/plain'));
+                    const newStatus = column.dataset.status;
+                    
+                    updateTaskStatus(taskId, newStatus);
+                });
+            });
+        }
+
+        function renderTasks() {
+            const tasks = taskData[currentContext]?.tasks || [];
+            
+            // Create a flat list of all tasks and subtasks
+            const allTasks = [];
+            tasks.forEach(task => {
+                allTasks.push({...task, isSubtask: false, parentTask: null});
+                
+                if (task.subtasks && task.subtasks.length > 0) {
+                    task.subtasks.forEach(subtask => {
+                        allTasks.push({
+                            ...subtask, 
+                            isSubtask: true, 
+                            parentTask: {
+                                id: task.id,
+                                title: task.title
+                            }
+                        });
+                    });
+                }
+            });
+            
+            Object.keys(statusLabels).forEach(status => {
+                const container = document.getElementById(`${status}-tasks`);
+                const count = document.getElementById(`${status}-count`);
+                const statusTasks = allTasks.filter(task => task.status === status);
+                
+                container.innerHTML = '';
+                count.textContent = statusTasks.length;
+                
+                statusTasks.forEach(task => {
+                    container.appendChild(createTaskCard(task));
+                });
+            });
+        }
+
+        function createTaskCard(task) {
+            const card = document.createElement('div');
+            card.className = `task-card priority-${task.priority}`;
+            if (task.isSubtask) {
+                card.className += ' subtask';
+            }
+            card.draggable = true;
+            card.dataset.taskId = task.id;
+            
+            card.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', task.id);
+                card.classList.add('dragging');
+            });
+            
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+            });
+            
+            card.addEventListener('click', () => {
+                openTaskModal(task.status, task);
+            });
+
+            // Parent reference for subtasks
+            const parentReferenceHtml = task.isSubtask && task.parentTask ? 
+                `<div class="parent-reference">Subtarea de: ${task.parentTask.title}</div>` : '';
+
+            // Don't show subtasks section for main tasks anymore since they're shown as individual cards
+            const blockersHtml = task.blockers && task.blockers.length > 0 ? 
+                `<div class="blockers">
+                    <div class="blocker-title">⚠️ Bloqueadores:</div>
+                    ${task.blockers.map(blocker => 
+                        `<div class="blocker-item">• ${blocker}</div>`
+                    ).join('')}
+                </div>` : '';
+
+            const tagsHtml = task.tags && task.tags.length > 0 ? 
+                task.tags.map(tag => `<span class="task-tag">${tag}</span>`).join('') : '';
+            
+            const assigneeHtml = task.assignee ? `<span class="task-assignee">${task.assignee}</span>` : '';
+            const teamHtml = task.team ? `<span class="task-team">${task.team}</span>` : '';
+
+            card.innerHTML = `
+                ${parentReferenceHtml}
+                <div class="task-title">${task.title}</div>
+                <div class="task-description">${task.description}</div>
+                <div class="task-meta">
+                    ${tagsHtml}
+                    ${assigneeHtml}
+                    ${teamHtml}
+                </div>
+                ${blockersHtml}
+                <div class="task-dates">
+                    Creado: ${new Date(task.creationDate).toLocaleDateString()}
+                    ${task.completedDate ? `<br>Completado: ${new Date(task.completedDate).toLocaleDateString()}` : ''}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function openTaskModal(status, task = null) {
+            editingTaskId = task ? task.id : null;
+            const modal = document.getElementById('taskModal');
+            const form = document.getElementById('taskForm');
+            const title = document.getElementById('modalTitle');
+            
+            title.textContent = task ? 'Editar Tarea' : 'Nueva Tarea';
+            
+            if (task) {
+                document.getElementById('taskTitle').value = task.title;
+                document.getElementById('taskDescription').value = task.description;
+                document.getElementById('taskPriority').value = task.priority;
+                document.getElementById('taskStatus').value = task.status;
+                document.getElementById('taskAssignee').value = task.assignee || '';
+                document.getElementById('taskTeam').value = task.team || '';
+                document.getElementById('taskTags').value = task.tags ? task.tags.join(', ') : '';
+                document.getElementById('taskNotes').value = task.notes || '';
+                
+                renderDependencies(task.dependencies || []);
+            } else {
+                form.reset();
+                document.getElementById('taskStatus').value = status;
+                renderDependencies([]);
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').style.display = 'none';
+            editingTaskId = null;
+        }
+
+        function renderDependencies(dependencies) {
+            const container = document.getElementById('dependenciesList');
+            container.innerHTML = '';
+            
+            dependencies.forEach((dep, index) => {
+                const depDiv = document.createElement('div');
+                depDiv.className = 'dependency-item';
+                depDiv.innerHTML = `
+                    <input type="text" value="${dep}" name="dependency" placeholder="Ej: master:1 o 5">
+                    <button type="button" class="remove-dependency" onclick="removeDependency(${index})">Eliminar</button>
+                `;
+                container.appendChild(depDiv);
+            });
+            
+            if (dependencies.length === 0) {
+                addDependencyField();
+            }
+        }
+
+        function addDependencyField() {
+            const container = document.getElementById('dependenciesList');
+            const depDiv = document.createElement('div');
+            depDiv.className = 'dependency-item';
+            depDiv.innerHTML = `
+                <input type="text" name="dependency" placeholder="Ej: master:1 o 5">
+                <button type="button" class="remove-dependency" onclick="removeDependency(${container.children.length})">Eliminar</button>
+            `;
+            container.appendChild(depDiv);
+        }
+
+        function removeDependency(index) {
+            const container = document.getElementById('dependenciesList');
+            container.children[index].remove();
+        }
+
+        function handleTaskSubmit(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const dependencies = Array.from(document.querySelectorAll('input[name="dependency"]'))
+                .map(input => input.value.trim())
+                .filter(dep => dep !== '');
+            
+            const tags = formData.get('tags').split(',').map(tag => tag.trim()).filter(tag => tag);
+            
+            const task = {
+                id: editingTaskId || taskIdCounter++,
+                title: formData.get('title'),
+                description: formData.get('description'),
+                priority: formData.get('priority'),
+                status: formData.get('status'),
+                dependencies: dependencies,
+                creationDate: editingTaskId ? 
+                    taskData[currentContext].tasks.find(t => t.id === editingTaskId).creationDate : 
+                    new Date().toISOString().slice(0, 19),
+                assignee: formData.get('assignee') || undefined,
+                team: formData.get('team') || undefined,
+                tags: tags.length > 0 ? tags : undefined,
+                notes: formData.get('notes') || undefined,
+                blockers: [],
+                subtasks: editingTaskId ? 
+                    taskData[currentContext].tasks.find(t => t.id === editingTaskId).subtasks || [] : 
+                    []
+            };
+
+            if (task.status === 'done' && !task.completedDate) {
+                task.completedDate = new Date().toISOString().slice(0, 19);
+            }
+
+            if (!taskData[currentContext]) {
+                taskData[currentContext] = {
+                    tasks: [],
+                    metadata: {
+                        created: new Date().toISOString(),
+                        updated: new Date().toISOString(),
+                        description: `${currentContext} context`
+                    }
+                };
+            }
+
+            if (editingTaskId) {
+                const taskIndex = taskData[currentContext].tasks.findIndex(t => t.id === editingTaskId);
+                taskData[currentContext].tasks[taskIndex] = task;
+            } else {
+                taskData[currentContext].tasks.push(task);
+            }
+
+            taskData[currentContext].metadata.updated = new Date().toISOString();
+            
+            saveData();
+            renderTasks();
+            closeTaskModal();
+        }
+
+        function updateTaskStatus(taskId, newStatus) {
+            let taskFound = false;
+            
+            // First try to find it as a main task
+            const mainTask = taskData[currentContext].tasks.find(t => t.id === taskId);
+            if (mainTask) {
+                mainTask.status = newStatus;
+                if (newStatus === 'done' && !mainTask.completedDate) {
+                    mainTask.completedDate = new Date().toISOString().slice(0, 19);
+                } else if (newStatus !== 'done') {
+                    delete mainTask.completedDate;
+                }
+                taskFound = true;
+            } else {
+                // If not found as main task, look for it as a subtask
+                taskData[currentContext].tasks.forEach(task => {
+                    if (task.subtasks) {
+                        const subtask = task.subtasks.find(st => st.id === taskId);
+                        if (subtask) {
+                            subtask.status = newStatus;
+                            if (newStatus === 'done' && !subtask.completedDate) {
+                                subtask.completedDate = new Date().toISOString().slice(0, 19);
+                            } else if (newStatus !== 'done') {
+                                delete subtask.completedDate;
+                            }
+                            taskFound = true;
+                        }
+                    }
+                });
+            }
+            
+            if (taskFound) {
+                taskData[currentContext].metadata.updated = new Date().toISOString();
+                saveData();
+                renderTasks();
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            if (e.target === document.getElementById('taskModal')) {
+                closeTaskModal();
+            }
+        });
+
+        function updateContextSelector() {
+            const contextSelect = document.getElementById('contextSelect');
+            const contexts = Object.keys(taskData);
+            
+            // Clear existing options
+            contextSelect.innerHTML = '';
+            
+            // Add options for each context
+            contexts.forEach(contextName => {
+                const option = document.createElement('option');
+                option.value = contextName;
+                option.textContent = `${contextName.charAt(0).toUpperCase() + contextName.slice(1)} Context`;
+                contextSelect.appendChild(option);
+            });
+            
+            // Set current context to first available
+            if (contexts.length > 0) {
+                currentContext = contexts.includes(currentContext) ? currentContext : contexts[0];
+                contextSelect.value = currentContext;
+            }
+        }
+
+        function loadJSONFile(event) {
+            const file = event.target.files[0];
+            if (file && file.type === 'application/json') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const jsonData = JSON.parse(e.target.result);
+                        taskData = jsonData;
+                        
+                        // Update task counter
+                        const allTaskIds = Object.values(taskData).flatMap(ctx => 
+                            ctx.tasks ? ctx.tasks.map(t => t.id) : []
+                        );
+                        taskIdCounter = allTaskIds.length > 0 ? Math.max(...allTaskIds) + 1 : 1;
+                        
+                        // Update context selector with new contexts
+                        updateContextSelector();
+                        
+                        // Reset sync system since we loaded new data
+                        unsavedChanges = 0;
+                        lastSyncTime = new Date();
+                        lastExportedData = JSON.parse(JSON.stringify(taskData));
+                        
+                        localStorage.setItem('taskManagerData', JSON.stringify(taskData));
+                        renderTasks();
+                        updateSyncStatus();
+                        
+                        showNotification(`✅ Datos cargados! Contextos: ${Object.keys(taskData).join(', ')}`, 'success');
+                    } catch (error) {
+                        showNotification('❌ Error al cargar JSON: ' + error.message, 'error');
+                    }
+                };
+                reader.readAsText(file);
+            } else {
+                alert('Por favor selecciona un archivo JSON válido');
+            }
+        }
+
+
+        initializeApp();
+    </script>
+</body>
+</html>

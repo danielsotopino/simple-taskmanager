@@ -1,58 +1,64 @@
-# 🚀 Small Task Manager - MCP
+# 🚀 Feature-Based Task Manager - MCP
 
-Un sistema de gestión de tareas multi-contexto basado en **Model Context Protocol (MCP)** y **FastMCP**, diseñado para organizar y gestionar tareas de manera jerárquica y contextual.
+Un sistema de gestión de tareas **feature-oriented** basado en **Model Context Protocol (MCP)** y **FastMCP**, diseñado para organizar tareas por funcionalidades de negocio en lugar de capas técnicas.
+
+## 🎯 **Nueva Arquitectura Feature-Based**
+
+### **Antes (Tech-Oriented)** ❌
+```
+Context: "frontend" 
+├── Login task
+├── User registration  
+├── Dashboard
+├── Payment form
+```
+
+### **Después (Feature-Oriented)** ✅
+```
+Context: "auth"
+├── [API] JWT authentication
+├── [Frontend] Login form
+├── [API] User registration endpoint
+
+Context: "payments"
+├── [API] Stripe integration
+├── [Frontend] Payment form
+├── [Mobile] Payment screen
+```
 
 ## 📋 Características Principales
 
-- **Gestión Multi-Contexto**: Organiza tareas en diferentes contextos (proyectos, equipos, áreas)
-- **Estructura Jerárquica**: Soporte para subtareas anidadas ilimitadas
-- **Sistema de Prioridades**: 4 niveles de prioridad (low, medium, high, critical)
-- **Estados de Tarea**: Flujo completo desde todo hasta completado
-- **Dependencias**: Gestión de dependencias entre tareas y contextos
-- **Sistema de Tags**: Categorización y filtrado avanzado
-- **API MCP Mejorada**: Herramientas estandarizadas con documentación automática
-- **Validación JSON Schema**: Estructura de datos robusta y validada
-- **Herramientas Completas**: 10 herramientas MCP para gestión completa de tareas
+- **🎯 Gestión Feature-Based**: Contextos = Funcionalidades de negocio completas
+- **🏗️ Arquitectura Validada**: Schemas JSON que refuerzan buenas prácticas
+- **📚 Auto-Documentación**: MCP server completamente auto-documentado
+- **🛠️ Auto-Generación**: Crea automáticamente archivos de proyecto
+- **⚡ Validaciones Automáticas**: Refuerza patrones y workflows
+- **🔄 Status Workflow**: Transiciones de estado validadas
+- **📝 Formato Estandarizado**: Títulos con formato `[TECH_TAG] Descripción`
+- **🏷️ Sistema de Tags**: Capas técnicas como tags, no contextos
 
 ## 🏗️ Arquitectura
 
-### Componentes Principales
+### **Archivos del MCP Server**
+```
+simple-taskmanager/
+├── server.py                  # MCP server con validaciones
+├── schema-tasks.json          # Schema para tasks.json
+├── schema-definitions.json    # Schema para definitions.json  
+├── MCP_USAGE_GUIDELINES.md   # Reglas de implementación
+└── README.md                 # Esta documentación
+```
 
-- **`server.py`**: Servidor MCP principal con FastMCP
-- **`schema.json`**: Esquema JSON para validación de datos
-- **`uv.lock`**: Gestión de dependencias con uv
-
-### Estructura de Datos
-
-```json
-{
-  "contexto": {
-    "tasks": [
-      {
-        "id": 1,
-        "title": "Título de la tarea",
-        "description": "Descripción detallada",
-        "priority": "high",
-        "status": "inprogress",
-        "dependencies": [],
-        "subtasks": [...],
-        "tags": ["backend", "core"],
-        "team": "backend"
-      }
-    ],
-    "metadata": {
-      "created": "2025-01-XX...",
-      "updated": "2025-01-XX...",
-      "description": "Descripción del contexto"
-    }
-  }
-}
+### **Archivos del Proyecto Consumidor**
+```
+mi-proyecto/
+├── tasks.json        # Tareas del proyecto (validado por schema-tasks.json)
+└── definitions.json  # Features del proyecto (validado por schema-definitions.json)
 ```
 
 ## 🚀 Instalación
 
 ### Prerrequisitos
-
 - Python 3.10+
 - uv (gestor de paquetes Python)
 
@@ -61,14 +67,13 @@ Un sistema de gestión de tareas multi-contexto basado en **Model Context Protoc
 1. **Clonar el repositorio**
    ```bash
    git clone <repository-url>
-   cd small-taskmanager
+   cd simple-taskmanager
    ```
 
 2. **Crear entorno virtual**
    ```bash
    uv venv
    source .venv/bin/activate  # En macOS/Linux
-   # o
    .venv\Scripts\activate     # En Windows
    ```
 
@@ -77,158 +82,217 @@ Un sistema de gestión de tareas multi-contexto basado en **Model Context Protoc
    uv sync
    ```
 
-4. **Configurar variables de entorno (opcional)**
+4. **Iniciar el servidor**
    ```bash
-   export TASKS_FILE_PATH="ruta/personalizada/tasks.json"
+   python server.py
    ```
 
-## 🎯 Uso
+## 🎯 Uso del MCP
 
-### Iniciar el Servidor
+### **🚀 Inicialización de Proyecto**
 
-```bash
-python server.py
+#### 1. Inicializar nuevo proyecto
+```python
+await init_project(
+    project_name="mi-ecommerce",
+    project_features=["auth", "products", "cart", "payments", "notifications"]
+)
 ```
 
-El servidor MCP se iniciará y estará listo para recibir comandos.
+#### 2. Obtener schemas y documentación
+```python
+# Obtener guías de uso
+await get_usage_guidelines()
 
-### Herramientas Disponibles
+# Obtener schemas de validación  
+await get_task_schema()
+await get_definitions_schema()
+```
 
-#### 1. Crear Tarea (`add_task`)
+#### 3. Crear template de definitions.json
+```python
+await create_definitions_template(
+    project_features=["user-management", "inventory", "orders"]
+)
+```
+
+### **📋 Gestión de Tareas**
+
+#### 1. Crear tarea (con validaciones automáticas)
 ```python
 await add_task(
-    context="proyecto",
-    title="Implementar autenticación",
-    description="Sistema JWT para usuarios",
+    context="auth",  # ✅ Válido: lowercase con guiones
+    title="[API] Implement JWT authentication",  # ✅ Formato correcto
+    description="Create JWT token generation and validation system",
     priority="high",
-    tags=["security", "backend"]
+    tags=["jwt", "security", "backend"]  # ✅ Tags válidos
 )
 ```
 
-#### 2. Listar Tareas (`list_tasks`)
-```python
-await list_tasks(
-    context="proyecto",  # opcional
-    tag="backend",       # opcional
-    limit=20,
-    offset=0
-)
-```
-
-#### 3. Obtener Tarea (`get_task`)
-```python
-await get_task(
-    context="proyecto",
-    task_id=1
-)
-```
-
-#### 4. Actualizar Estado (`update_task_status`)
+#### 2. Actualizar estado (con workflow validation)
 ```python
 await update_task_status(
-    context="proyecto",
+    context="auth",
     task_id=1,
-    status="done"
+    status="inprogress"  # ✅ Transición válida: todo → inprogress
 )
 ```
 
-#### 5. Crear Subtarea (`add_subtask`)
+#### 3. Crear subtarea
 ```python
 await add_subtask(
-    context="proyecto",
+    context="auth",
     task_id=1,
-    title="Validar formulario",
-    description="Implementar validaciones del lado del cliente",
-    tags=["frontend", "validation"]
+    title="[DB] Design user schema", 
+    description="Define database structure for users",
+    tags=["database", "schema"]
 )
 ```
 
-#### 6. Obtener Subtarea (`get_subtask_by_id`)
+### **🔍 Validación y Consulta**
+
+#### 1. Validar archivos del proyecto
 ```python
-await get_subtask_by_id(
-    context="proyecto",
-    task_id=1,
-    subtask_id=101
+await validate_project_files(
+    tasks_file_path="./tasks.json",
+    definitions_file_path="./definitions.json"
 )
 ```
 
-#### 7. Actualizar Estado de Subtarea (`update_subtask_status`)
+#### 2. Listar tareas con filtros
 ```python
-await update_subtask_status(
-    context="proyecto",
-    task_id=1,
-    subtask_id=101,
-    status="done"
+await list_tasks(
+    context="auth",
+    tag="security", 
+    limit=20
 )
 ```
 
-#### 8. Eliminar Subtarea (`delete_subtask`)
-```python
-await delete_subtask(
-    context="proyecto",
-    task_id=1,
-    subtask_id=101
-)
+## ⚡ Validaciones Automáticas
+
+### **🏷️ Context Names**
+- **Patrón**: `^[a-z][a-z0-9-]*$`
+- **✅ Válido**: `auth`, `user-management`, `payment-processing`
+- **❌ Inválido**: `Auth`, `user_management`, `1auth`
+
+### **🏷️ Tag Names** 
+- **Patrón**: `^[a-z0-9-]+$`
+- **✅ Válido**: `api`, `frontend`, `jwt-auth`
+- **❌ Inválido**: `API`, `frontend_ui`, `JWT Auth`
+
+### **📝 Title Format**
+- **Patrón**: `^\\[([A-Z]+)\\]\\s+.+`
+- **✅ Válido**: `[API] Implement authentication`, `[FRONTEND] Create login form`
+- **⚠️ Advertencia**: Si no sigue el formato (no bloquea, solo advierte)
+
+### **🔄 Status Workflow**
+```
+todo → inprogress, blocked
+inprogress → inreview, testing, blocked, done
+inreview → inprogress, testing, done  
+testing → inprogress, done, blocked
+blocked → todo, inprogress
+done → (final state)
 ```
 
-#### 9. Eliminar Tarea (`delete_task`)
-```python
-await delete_task(
-    context="proyecto",
-    task_id=1
-)
+### **🔗 Dependencies**
+- **Mismo contexto**: `5` (solo ID numérico)
+- **Cross-context**: `auth:1` o `auth:1:5` (context:task:subtask)
+
+## 📊 Ejemplo de definitions.json
+
+```json
+{
+  "features": {
+    "auth": {
+      "description": "Authentication and authorization system",
+      "common_tags": ["jwt", "login", "security", "sessions"],
+      "related_contexts": ["user-management"]
+    },
+    "user-management": {
+      "description": "User lifecycle and profile management", 
+      "common_tags": ["users", "profiles", "crud", "permissions"],
+      "related_contexts": ["auth"]
+    },
+    "payments": {
+      "description": "Payment processing and financial transactions",
+      "common_tags": ["stripe", "billing", "subscriptions"],
+      "related_contexts": ["user-management", "notifications"]
+    }
+  },
+  "tech_tags": {
+    "api": "Backend/API development tasks",
+    "frontend": "Frontend UI/UX tasks", 
+    "mobile": "Mobile application tasks",
+    "db": "Database and data layer tasks",
+    "devops": "Infrastructure and deployment"
+  }
+}
 ```
 
-#### 10. Listar Subtareas (`list_subtasks`)
-```python
-await list_subtasks(
-    context="proyecto",
-    task_id=1,
-    recursive=True  # incluir subtareas anidadas
-)
+## 📊 Ejemplo de tasks.json
+
+```json
+{
+  "auth": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "[API] JWT Authentication System",
+        "description": "Implement complete JWT authentication",
+        "priority": "high",
+        "status": "inprogress", 
+        "tags": ["api", "jwt", "security"],
+        "dependencies": [],
+        "creationDate": "2025-08-25T10:00:00",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "[DB] User schema design",
+            "description": "Design database structure for users",
+            "status": "done",
+            "tags": ["db", "schema"],
+            "dependencies": [],
+            "creationDate": "2025-08-25T10:00:00",
+            "subtasks": []
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-25T10:00:00.000Z",
+      "updated": "2025-08-25T10:00:00.000Z", 
+      "description": "Authentication and authorization features"
+    }
+  }
+}
 ```
 
-### Estados de Tarea Válidos
+## 📚 Herramientas MCP Disponibles
 
-- `todo` - Pendiente
-- `inprogress` - En progreso
-- `inreview` - En revisión
-- `testing` - En pruebas
-- `done` - Completada
-- `blocked` - Bloqueada
+### **🔧 Documentación y Ayuda**
+- `get_usage_guidelines` - Guías completas de uso
+- `get_task_schema` - Schema de validación para tasks.json
+- `get_definitions_schema` - Schema de validación para definitions.json
+- `validate_project_files` - Validar archivos del proyecto
 
-### Estructura de Herramientas MCP
+### **🛠️ Generación de Archivos**
+- `init_project` - Inicializar proyecto completo
+- `create_definitions_template` - Generar definitions.json personalizado
 
-Todas las herramientas siguen un formato consistente con:
+### **📋 Gestión de Tareas**
+- `add_task` - Crear tarea (con validaciones)
+- `list_tasks` - Listar con filtros
+- `get_task` - Obtener tarea específica
+- `update_task_status` - Cambiar estado (con workflow validation)
+- `delete_task` - Eliminar tarea
 
-- **Nombres explícitos**: Cada herramienta tiene un nombre descriptivo
-- **Documentación de parámetros**: Todos los parámetros incluyen descripciones detalladas
-- **Validación de tipos**: Uso de Pydantic Field para validación y documentación
-- **Manejo de errores**: Respuestas consistentes con logging contextual
-
-#### Ejemplo de Estructura de Herramienta
-
-```python
-@mcp.tool(
-    name="add_task",
-    description="Create a new task in the specified context"
-)
-async def add_task(
-    context: str = Field(description="The context name"),
-    title: str = Field(description="The task title"),
-    description: str = Field(description="The task description"),
-    priority: str = Field(description="The task priority (low, medium, high, critical)"),
-    tags: Optional[List[str]] = Field(default=None, description="List of tags for the task"),
-    ctx: Context = None
-) -> dict:
-```
-
-### Prioridades Válidas
-
-- `low` - Baja
-- `medium` - Media
-- `high` - Alta
-- `critical` - Crítica
+### **📋 Gestión de Subtareas**
+- `add_subtask` - Crear subtarea (con validaciones)
+- `list_subtasks` - Listar subtareas 
+- `get_subtask_by_id` - Obtener subtarea específica
+- `update_subtask_status` - Cambiar estado (con workflow validation)
+- `delete_subtask` - Eliminar subtarea
 
 ## 🔧 Configuración
 
@@ -238,133 +302,51 @@ async def add_task(
 |----------|-------------|-------------------|
 | `TASKS_FILE_PATH` | Ruta del archivo de tareas | `simple-taskmanager/tasks.json` |
 
-### Personalización del Schema
+## 🆘 Guías de Implementación
 
-El archivo `schema.json` define la estructura completa de las tareas. Puedes modificarlo para:
+El archivo `MCP_USAGE_GUIDELINES.md` contiene:
 
-- Agregar nuevos campos
-- Cambiar validaciones
-- Modificar tipos de datos
-- Ajustar restricciones
+- ✅ **Validation Rules**: Patrones exactos para nombres y formatos
+- 🔄 **Status Workflow**: Transiciones de estado permitidas  
+- 📋 **Priority Guidelines**: Cuándo usar cada prioridad
+- 🛠️ **Implementation Requirements**: Qué debe validar el MCP server
 
-## 📊 Ejemplos de Uso
+## ✨ Beneficios de la Nueva Arquitectura
 
-### Contexto de Desarrollo Backend
-```json
-{
-  "backend": {
-    "tasks": [
-      {
-        "id": 1,
-        "title": "API de Usuarios",
-        "description": "Endpoints CRUD para gestión de usuarios",
-        "priority": "high",
-        "status": "inprogress",
-        "team": "backend",
-        "tags": ["api", "users", "crud"],
-        "subtasks": [
-          {
-            "id": 101,
-            "title": "Modelo de Usuario",
-            "description": "Definir estructura de datos",
-            "status": "done"
-          }
-        ]
-      }
-    ],
-    "metadata": {
-      "description": "Desarrollo del backend de la aplicación"
-    }
-  }
-}
-```
+### **Para Desarrolladores**
+- 🎯 **Mejor organización**: Features completos vs. capas técnicas fragmentadas
+- 📋 **Tracking claro**: Progreso visible por funcionalidad
+- 🔍 **Contexto relevante**: Tareas relacionadas agrupadas
+- ⚡ **Validaciones automáticas**: Menos errores, más consistencia
 
-### Contexto de Frontend
-```json
-{
-  "frontend": {
-    "tasks": [
-      {
-        "id": 1,
-        "title": "Dashboard de Usuario",
-        "description": "Interfaz principal del usuario",
-        "priority": "medium",
-        "status": "todo",
-        "dependencies": ["backend:1"],
-        "team": "frontend",
-        "tags": ["ui", "dashboard", "react"]
-      }
-    ],
-    "metadata": {
-      "description": "Desarrollo de la interfaz de usuario"
-    }
-  }
-}
-```
+### **Para Equipos**
+- 🤝 **Colaboración**: Features cross-functional naturalmente agrupados  
+- 📊 **Visibilidad**: Estado de funcionalidades completas vs. fragmentos técnicos
+- 🎯 **Priorización**: Decisiones basadas en valor de negocio
+- 📈 **Planificación**: Dependencias entre features más claras
 
-## 🧪 Testing
-
-Para ejecutar las pruebas (cuando estén implementadas):
-
-```bash
-# Usar base de datos SQLite para tests
-pytest --db=sqlite
-```
-
-## 🤝 Contribución
-
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-## 📝 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
-
-## 🆘 Soporte
-
-Si tienes problemas o preguntas:
-
-- Abre un issue en GitHub
-- Revisa la documentación del esquema JSON
-- Consulta los ejemplos de uso
+### **Para IAs**
+- 🧠 **Validación consistente**: Patrones claros y aplicados automáticamente
+- 🏷️ **Taxonomía clara**: Features vs. tech_tags bien definidos
+- 🔄 **Workflow enforcement**: Transiciones de estado controladas
+- 📚 **Auto-documentación**: MCP server completamente auto-explicativo
 
 ## 🔮 Roadmap
 
+- [ ] Validación JSON Schema completa con jsonschema library
 - [ ] Interfaz web para gestión visual
-- [ ] Sistema de notificaciones
+- [ ] Sistema de templates de features más avanzados
 - [ ] Integración con sistemas externos (GitHub, Jira)
-- [ ] Reportes y analytics
-- [ ] API REST adicional
-- [ ] Sistema de permisos y roles
-- [ ] Backup y sincronización
-
-## ✨ Mejoras Recientes
-
-### API MCP Mejorada
-
-- **Herramientas Estandarizadas**: Todas las herramientas ahora siguen el mismo formato
-- **Documentación Automática**: Parámetros documentados con Pydantic Field
-- **Nombres Explícitos**: Cada herramienta tiene un nombre descriptivo único
-- **Validación Robusta**: Mejor manejo de errores y validación de tipos
-- **Logging Contextual**: Respuestas informativas con contexto MCP
-
-### Beneficios para Desarrolladores
-
-- **Mejor Autocompletado**: IDEs pueden proporcionar mejor asistencia
-- **Documentación Integrada**: Parámetros auto-documentados
-- **Consistencia**: API uniforme y predecible
-- **Mantenibilidad**: Código más fácil de mantener y extender
+- [ ] Reportes de progreso por feature
+- [ ] Sistema de notificaciones basado en workflow
 
 ## 📚 Referencias
 
 - [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 - [FastMCP](https://github.com/jlowin/fastmcp)
 - [JSON Schema](https://json-schema.org/)
-- [uv - Fast Python Package Installer](https://github.com/astral-sh/uv)
+- [Feature-Based Development](https://en.wikipedia.org/wiki/Feature-driven_development)
 
 ---
 
-**Desarrollado con ❤️ usando FastMCP y Python**
+**Desarrollado con ❤️ usando FastMCP, JSON Schema y arquitectura Feature-Based**

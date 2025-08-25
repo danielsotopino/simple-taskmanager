@@ -5,8 +5,9 @@
  "description": "Schema for multi-context hierarchical task management",
  "type": "object",
  "patternProperties": {
-   "^[a-zA-Z][a-zA-Z0-9_-]*$": {
-     "$ref": "#/definitions/context"
+   "^[a-z][a-z0-9-]*$": {
+     "$ref": "#/definitions/context",
+     "description": "Context names must be lowercase, start with letter, use hyphens"
    }
  },
  "additionalProperties": false,
@@ -46,8 +47,10 @@
        },
        "title": {
          "type": "string",
+         "pattern": "^\\[([A-Z]+)\\]\\s+.+",
          "minLength": 1,
-         "maxLength": 200
+         "maxLength": 200,
+         "description": "Task title should follow format: [TECH_TAG] Description"
        },
        "description": {
          "type": "string",
@@ -63,7 +66,8 @@
        },
        "priority": {
          "type": "string",
-         "enum": ["low", "medium", "high", "critical"]
+         "enum": ["low", "medium", "high", "critical"],
+         "description": "Task priority: low (backlog), medium (2-3 sprints), high (current sprint), critical (immediate)"
        },
        "status": {
          "$ref": "#/definitions/status"
@@ -100,8 +104,10 @@
          "type": "array",
          "items": {
            "type": "string",
+           "pattern": "^[a-z0-9-]+$",
            "minLength": 1,
-           "maxLength": 50
+           "maxLength": 50,
+           "description": "Tags must be lowercase with hyphens only"
          },
          "uniqueItems": true,
          "description": "Tags for categorization and filtering"
@@ -144,8 +150,10 @@
        },
        "title": {
          "type": "string",
+         "pattern": "^\\[([A-Z]+)\\]\\s+.+",
          "minLength": 1,
-         "maxLength": 200
+         "maxLength": 200,
+         "description": "Subtask title should follow format: [TECH_TAG] Description"
        },
        "description": {
          "type": "string",
@@ -195,9 +203,11 @@
            "type": "string",
            "pattern": "^[a-z0-9-]+$",
            "minLength": 1,
-           "maxLength": 50
+           "maxLength": 50,
+           "description": "Tags must be lowercase with hyphens only"
          },
-         "uniqueItems": true
+         "uniqueItems": true,
+         "description": "Tags for categorization and filtering"
        },
        "blockers": {
          "type": "array",
@@ -221,7 +231,7 @@
    "status": {
      "type": "string",
      "enum": ["todo", "inprogress", "inreview", "testing", "done", "blocked"],
-     "description": "Current status of the task or subtask"
+     "description": "Task status with workflow: todo→inprogress→inreview/testing→done, blocked can transition to todo/inprogress"
    },
    "dependency": {
      "oneOf": [
@@ -232,9 +242,9 @@
        },
        {
          "type": "string",
-         "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*:[0-9]+$",
-         "description": "Cross-context dependency - format: context:taskId",
-         "examples": ["master:1", "store:50", "customer:12"]
+         "pattern": "^[a-z][a-z0-9-]*:[0-9]+(:[0-9]+)?$",
+         "description": "Cross-context dependency - format: context:taskId or context:taskId:subtaskId",
+         "examples": ["auth:1", "user-management:15", "auth:1:5"]
        }
      ]
    },

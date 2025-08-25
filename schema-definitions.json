@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/task-definitions.schema.json",
+  "title": "Task Management Definitions Schema",
+  "description": "Schema for project-specific task management definitions",
+  "type": "object",
+  "required": ["features", "tech_tags"],
+  "properties": {
+    "features": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z][a-z0-9-]*$": {
+          "type": "object",
+          "required": ["description", "common_tags"],
+          "properties": {
+            "description": { "type": "string", "minLength": 1 },
+            "common_tags": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+            "related_contexts": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "tech_tags": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z0-9-]+$": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
